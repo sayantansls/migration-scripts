@@ -7,6 +7,8 @@ isDropped() {
 	do
 		if [ "$1" == "$dropped_module" ]; then
 			isPresent="1"
+		else
+			continue
 		fi
 	done
 	return $isPresent
@@ -21,8 +23,8 @@ DROPPED_MODULES=$(cat $2)
 ALL_MODULES_COUNT=$(cat $1 | wc -l)
 DROPPED_MODULES_COUNT=$(cat $2 | wc -l)
 
-echo "INFO: Modules to be migrated - $ALL_MODULES_COUNT"
-echo "INFO: Modules to be dropped from migration - $DROPPED_MODULES_COUNT"
+echo "INFO : Modules to be migrated - $ALL_MODULES_COUNT"
+echo "INFO : Modules to be dropped from migration - $DROPPED_MODULES_COUNT"
 
 if [[ ! -d svn ]]; then
 	mkdir svn
@@ -36,7 +38,7 @@ fi
 
 if [[ ! -d logs ]]; then
 	mkdir logs
-	echo "INFO: Created logs directory"
+	echo "INFO: Created the logs directory"
 fi
 
 cd git
@@ -64,38 +66,38 @@ do
 	fi
 
 	cd svn
-	echo "INFO: Started cloning of $module from svn repository"
+
+	echo "INFO: Started cloning of $module from svn repository" | tee -a $LOG_FILE
 	git svn clone https://gokarna.strandls.com/svn/rep/comics/$module/ --no-metadata --authors-file=../authors.txt --stdlayout $module/ >> $LOG_FILE 2>&1
-	echo "INFO: Successfully cloned the svn repository of $module" | tee -a $LOG_FILE
-	echo "INFO: Completed cloning of $module from svn repository"
+	echo "INFO: Successfully cloned the svn repository of $module" >> $LOG_FILE
+	echo "INFO: Completed cloning of $module from svn repository" | tee -a $LOG_FILE
 
-	cd $module/
-
-	if [[ ! -d $DIR/svn/$module/src ]]; then
+	if [[ ! -d $DIR/svn/$module/src && ! -f $DIR/svn/$module/pom.xml ]]; then
 		echo "WARNING: No src present in $module cloned repository" | tee -a $LOG_FILE
 		echo "INFO: Skipping $module migration" | tee -a $LOG_FILE
 		cd ..
-		echo -e "\n##################################\n"
+		echo -e "\n#####################################\n"
 		continue
 	fi
 
+	cd $module/
 	mkdir $module
 	mv !($module) $module
 	git add -A 
 
-	echo "INFO: Started committing the contents of $module to sub-folder"
+	echo "INFO: Started committing the contents of $module to sub-folder" | tee -a $LOG_FILE
 	git commit -m "Migration from svn to git for $module : Moving to sub-folder" >> $LOG_FILE 2>&1
-	echo "INFO: Successfully committed the files for $module" | tee -a $LOG_FILE
-	echo "INFO: Completed committing the contents of $module to sub-folder"
+	echo "INFO: Successfully committed the files for $module" >> $LOG_FILE
+	echo "INFO: Completed committing the contents of $module" | tee -a $LOG_FILE
 
 	cd ../../git
 	if [[ -d $DIR/svn/$module ]]; then
-		git remote add -f $module  $DIR/svn/$module/ 2>&1 | tee -a $LOG_FILE
+		git remote add -f $module  $DIR/svn/$module/ >> $LOG_FILE 2>&1
 		git merge --no-edit --allow-unrelated-histories $module/master >> $LOG_FILE 2>&1
-		echo "INFO: Successfully migrated $module from svn to git repository"
-		echo -e "\n##################################\n"
+		echo "INFO: Successfully migrated $module from svn to git repository" | tee -a $LOG_FILE
+		echo -e "\n#####################################\n"
 	else
-		echo "WARNING: $module not present in svn directory"
+		echo "WARNING: $module not present in svn directory" | tee -a $LOG_FILE
 	fi
 	cd ..
 done
