@@ -10,6 +10,9 @@ import xml.etree.ElementTree as ET
 import sys, copy, os
 from pprint import pprint
 
+TAGS = {'res': {'name': 'Resource', 'output': '-output-res.tsv'}, 
+		'env': {'name': 'Environment', 'output': '-output-env.tsv'}}
+
 def compare_children(children):
 	# children is a list of dictionaries
 	is_same, duplicated_tags = [0, list()]
@@ -22,7 +25,7 @@ def compare_children(children):
 				if cmp(item, child) == 0:
 					duplicated_tags.append(child)
 	print('Number of duplicated child tags : {}'.format(len(duplicated_tags)))
-	pprint(duplicated_tags)
+	#pprint(duplicated_tags)
 	
 def segregate_child(children):
 	type_dict = dict()
@@ -34,14 +37,21 @@ def segregate_child(children):
 				type_dict[tag_type] += 1
 	return type_dict
 
-def print_out_xml(children, output):
-	headers = children[0].keys()
-	
-	#for child in children:
-		#print('\t'.join(child.keys()))
+def print_out_xml(children, tag_name, xml_file):
+	if tag_name == TAGS['env']['name']:
+		output_filename = xml_file.replace('.xml', TAGS['env']['output'])
+	elif tag_name == TAGS['res']['name']:
+		output_filename = xml_file.replace('.xml', TAGS['res']['output'])
 
-	#output.write('\t'.join(headers))
-	#output.write('\n')
+	if output_filename:
+		output_path = os.path.join('../data/output', os.path.basename(output_filename))
+		output = open(output_path, 'w+')
+
+	headers = children[0].keys()
+
+	if tag_name == TAGS['env']['name']:
+		output.write('\t'.join(headers))
+		output.write('\n')
 
 	for child in children:
 		output.write('\t'.join(child.values()))
@@ -61,15 +71,13 @@ def main(xml_file):
 		child_types.add(child.tag)
 		children.append(child.attrib)
 
-		if child.tag == 'Environment':
+		if child.tag == TAGS['env']['name']:
 			children_env.append(child.attrib)
-		elif child.tag == 'Resource':
+		elif child.tag == TAGS['res']['name']:
 			children_res.append(child.attrib)
 
-	output_filename = xml_file.replace('.xml', '-output-res.tsv')
-	output_path = os.path.join('../data/output', os.path.basename(output_filename))
-	output = open(output_path, 'w+') 
-	print_out_xml(children_res, output)
+	print_out_xml(children_res, TAGS['res']['name'], xml_file)
+	print_out_xml(children_env, TAGS['env']['name'], xml_file)
 
 	print('Number of child tags : {}'.format(len(root)))
 	print('Type of child tags : {}'.format(child_types))
