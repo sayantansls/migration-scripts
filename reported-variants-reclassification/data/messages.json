@@ -1,0 +1,20 @@
+{
+	"success-messages" : {
+		"TEST_ABSENT" : "INFO : Number of tests not present in case_registry file - {}",
+		"CASES_MAF_FAIL" : "INFO : Number of cases failed to map MAF : {}",
+		"FILE_WRITE" : "INFO : Writing file for MAF Type - {} ; file - {}",
+		"TEST_MAF_MAP_SUCCESS" : "INFO : Test ID to MAF mapping successfully created",
+		"TEST_CASE_MAP_SUCCESS" : "INFO : Test ID to Case ID mapping successfully created",
+		"OUTPUT_PRESENT" : "INFO : Found output file after mapping MAF - {}",
+		"SPLIT_FILE_PRESENT": "INFO : Split file {} found",
+		"VCF_INPUT_FILE" : "INFO : Input file for VCF generation created for split file - {}"
+	},
+
+	"error-messages" : {
+		"FILE_NOT_PRESENT" : "ERROR : File provided - {} is not present",
+		"TEST_MAF_MAP_FAIL" : "ERROR : Test ID to MAF mapping could not be created",
+		"TEST_CASE_MAP_FAIL" : "ERROR : Test ID to Case ID mapping could not be created",
+		"OUTPUT_ABSENT" : "ERROR : Output file after mapping MAF not created/found",
+		"SPLIT_FILE_ABSENT" : "ERROR : Split file {} not created/found"
+	}
+}

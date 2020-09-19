@@ -1,13 +1,16 @@
 """
 author : sayantan (sayantan.ghosh@strandls.com)
+This script performs the processes required for reported variants reclassification
+upto the creation of VCFs which are to be uplaoded to StrandOmics
 """
 
-import time as tm
-import csv, sys, os
-from pprint import pprint
+import csv, sys, json
+import os, utils
 
-INPUT_DIR = '../data/input'
-OUTPUT_DIR = '../data/output'
+config_json = utils.read_json('../data/config.json')
+messages = utils.read_json(config_json['messages-file'])
+
+INPUT_DIR, OUTPUT_DIR = [config_json['input-dir'], config_json['output-dir']]
 
 class CaseIdTestIdMafObject():
 	def __init__(self, test_id, case_id, maf):
@@ -31,7 +34,7 @@ The headers in the file test-details.tsv file are as follows:
 def create_map_from_file(file_object):
 	file_map = dict()
 	if not os.path.exists(file_object['file']):
-		raise Exception('ERROR : File -- {} not present'.format(file_object['file']))
+		raise Exception(messages['error-messages']['FILE_NOT_PRESENT'].format(file_object['file']))
 	input_file = open(file_object['file'], 'r')
 	input_data = csv.DictReader(input_file, delimiter='\t', dialect=csv.excel_tab)
 	for row in input_data:
@@ -52,7 +55,7 @@ def create_caseid_testid_maf_objects(test_id_maf_map, test_id_case_id_map):
 		caseid_testid_maf_objects.append(caseid_testid_maf_object)
 
 	if failed_tests:
-		print('INFO : Number of tests not present in case_registry file - {}'.format(len(failed_tests)))
+		print(messages['success-messages']['TEST_ABSENT'].format(len(failed_tests)))
 
 """
 The headers in the case_registry.tsv file are as follows:
@@ -85,10 +88,10 @@ def map_maf_to_reported_variants(reported_variants_dump, output):
 		row['MAF'] = maf_for_row
 		output_writer.writerow(row)
 
-	if failed_mapping: print('INFO : Number of cases failed to map MAF : {}'.format(len(failed_mapping)))
+	if failed_mapping: print(messages['success-messages']['CASES_MAF_FAIL'].format(len(failed_mapping)))
 
 def split_file_on_maf(reported_variants_dump):
-	maf_types = ['0.01', '0.02', '0.05']
+	maf_types = config_json['maf-types']
 	output_files = list()
 	for maf_type in maf_types:
 		input_file = open(reported_variants_dump, 'r')
@@ -97,7 +100,7 @@ def split_file_on_maf(reported_variants_dump):
 
 		output = reported_variants_dump.replace('.tsv', '-{}.tsv'.format(maf_type))
 		output_files.append(output)
-		print('INFO : Writing file for MAF Type - {} ; file - {}'.format(maf_type, output))
+		print(messages['success-messages']['FILE_WRITE'].format(maf_type, output))
 		output_file = open(output, 'w+')
 		output_writer = csv.DictWriter(output_file, delimiter='\t', fieldnames=field_names)
 		output_writer.writeheader()
@@ -139,41 +142,39 @@ def create_input_files_for_vcf_creation(reported_variants_dump):
 		output_file.write('\n')
 
 def main(test_details, case_registry, reported_variants_dump):
-	print('Start of code : {}'.format(tm.ctime(tm.time())))
-	test_details_object = {'file' : test_details, 'key_field': 'test_id', 'value_field': 'allele_frequency'}
-	case_registry_object = {'file': case_registry, 'key_field': 'test_id', 'value_field': 'case_no'}
+	test_details_object = {'file' : test_details, 'key_field' : 'test_id', 'value_field' : 'allele_frequency'}
+	case_registry_object = {'file' : case_registry, 'key_field' : 'test_id', 'value_field' : 'case_no'}
 	
 	test_id_maf_map = create_map_from_file(test_details_object)
 	if test_id_maf_map:
-		print('INFO : Test ID to MAF mapping successfully created')
+		print(messages['success-messages']['TEST_MAF_MAP_SUCCESS'])
 	else:
-		raise Exception('ERROR : Test ID to MAF mapping could not be created')
+		raise Exception(messages['error-messages']['TEST_MAF_MAP_FAIL'])
 
 	test_id_case_id_map = create_map_from_file(case_registry_object)
 	if test_id_case_id_map:
-		print('INFO : Test ID to Case ID mapping successfully created')
+		print(messages['success-messages']['TEST_CASE_MAP_SUCCESS'])
 	else:
-		raise Exception('ERROR : Test ID to Case ID mapping could not be created')
+		raise Exception(messages['error-messages']['TEST_CASE_MAP_FAIL'])
 
 	create_caseid_testid_maf_objects(test_id_maf_map, test_id_case_id_map)
 	output = reported_variants_dump.replace('.tsv', '-output.tsv').replace(INPUT_DIR, OUTPUT_DIR)
 	map_maf_to_reported_variants(reported_variants_dump, output)
 
 	if os.path.exists(output):
-		print('INFO : Found output file after mapping MAF - {}'.format(output))
+		print(messages['success-messages']['OUTPUT_PRESENT'].format(output))
 	else:
-		raise Exception('ERROR : Output file after mapping MAF not created/found')
+		raise Exception(messages['error-messages']['OUTPUT_ABSENT'])
 
 	split_files = split_file_on_maf(output)
 	for file in split_files:
 		if not os.path.exists(file):
-			raise Exception('ERROR : Split file {} not created/found'.format(file))
+			raise Exception(messages['error-messages']['SPLIT_FILE_ABSENT'].format(file))
 		else:
-			print('INFO : Split file {} found'.format(file))
+			print(messages['success-messages']['SPLIT_FILE_PRESENT'].format(file))
 			create_input_files_for_vcf_creation(file)
-			print('INFO : Input file for VCF generation created for split file - {}'.format(file))
-
-	print('End of code : {}'.format(tm.ctime(tm.time())))
+			print(messages['success-messages']['VCF_INPUT_FILE'].format(file))
 
 if __name__ == '__main__':
-	main(sys.argv[1], sys.argv[2], sys.argv[3])
+	properties = utils.read_properties(config_json['properties-file'])
+	main(properties['test-details'], properties['case-registry'], properties['reported-variants-dump'])

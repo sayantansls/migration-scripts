@@ -1,0 +1,7 @@
+{
+	"properties-file" : "../data/config.prop",
+	"messages-file" : "../data/messages.json",
+	"input-dir" : "../data/input",
+	"output-dir" : "../data/output",
+	"maf-types" : ["0.01", "0.02", "0.05"]
+}

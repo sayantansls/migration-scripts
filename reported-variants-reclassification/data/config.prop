@@ -1,0 +1,3 @@
+test-details=../data/input/test-details.tsv
+case-registry=../data/input/case_registry.tsv
+reported-variants-dump=../data/input/reported-variants-dump.tsv
